@@ -8,10 +8,7 @@ export default function Home() {
 
   return (
     <div>
-      <h2>Donate to Onur's Website</h2>
-      <Button>Save</Button>
-      <Button onClick={()=>setTheme('dark')}>Dark Button</Button>
-      <Button onClick={()=>setTheme('light')}>Light Button</Button>
+
     </div>
   );
 }
