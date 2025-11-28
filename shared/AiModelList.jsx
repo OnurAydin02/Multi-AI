@@ -44,7 +44,7 @@ export default [
         premium: true,
         enable: true,
         subModel: [
-            { name: "Ministral Medium 2505", premium: false, id: "ministral-medium-2505" },
+            { name: "Ministral Medium 2505", premium: false, id: "mistral-medium-2505" },
             { name: "Ministral 3B", premium: true, id: "Ministral-3B" },
         ],
     },
