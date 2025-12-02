@@ -16,6 +16,7 @@ function Provider({ children, ...props }) {
     const { user } = useUser();
     const [aiSelectedModels,setAiSelectedModels] = useState(DefaultModel);
     const [userDetail,setUserDetail] = useState();
+    const [messages, setMessages] = useState({})
 
     useEffect(() => {
         if (user) {
@@ -66,7 +67,7 @@ function Provider({ children, ...props }) {
             disableTransitionOnChange>
 
             <UserDetailContext.Provider value={{userDetail,setUserDetail}}>
-            <AiSelectedModelConetxt.Provider value={{aiSelectedModels,setAiSelectedModels}}>
+            <AiSelectedModelConetxt.Provider value={{aiSelectedModels, setAiSelectedModels, messages, setMessages}}>
                 <SidebarProvider>
                     <AppSidebar />
 
