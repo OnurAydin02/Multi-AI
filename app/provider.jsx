@@ -1,86 +1,73 @@
-"use client"
-import React, { useEffect, useState } from "react";
-import { ThemeProvider as NextThemesProvider } from "next-themes"
-import { SidebarProvider } from "@/components/ui/sidebar"
-import { AppSidebar } from "./_components/AppSidebar"
-import AppHeader from "./_components/AppHeader";
+"use client";
+
+import React, { createContext, useEffect, useState } from "react";
 import { useUser } from "@clerk/nextjs";
 import { db } from "@/config/FirebaseConfig";
 import { doc, getDoc, setDoc } from "firebase/firestore";
-import { AiSelectedModelConetxt } from "@/context/AiSelectedModelContext";
 import { DefaultModel } from "@/shared/AiModelsShared";
-import { UserDetailContext } from "@/context/UserDetailContext";
 
-function Provider({ children, ...props }) {
+export const AiSelectedModelContext = createContext();
 
-    const { user } = useUser();
-    const [aiSelectedModels,setAiSelectedModels] = useState(DefaultModel);
-    const [userDetail,setUserDetail] = useState();
-    const [messages, setMessages] = useState({})
+export default function Provider({ children }) {
+  const { user } = useUser();
 
-    useEffect(() => {
-        if (user) {
-            CreateNewUser();   // <-- DOĞRU ŞEKİLDE ÇAĞIRMA
+  const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
+  const [messages, setMessages] = useState([]);
+  const [mounted, setMounted] = useState(false);
+
+  // Hydration hatası çözümü — client mount olana kadar render edilmez
+  useEffect(() => setMounted(true), []);
+  if (!mounted) return null;
+
+  // -----------------------------------------------------------
+  //  🔥 Firestore’daki kullanıcıyı oluştur / yükle
+  // -----------------------------------------------------------
+  useEffect(() => {
+    if (!user) return;
+
+    const loadUser = async () => {
+      try {
+        const userId = user.id; // ✔ Firestore için güvenli ID
+        const userEmail = user.primaryEmailAddress?.emailAddress;
+        const userRef = doc(db, "users", userId);
+
+        const snap = await getDoc(userRef);
+
+        if (!snap.exists()) {
+          // ------------------------------
+          // Firestore'da yeni kullanıcı oluştur
+          // ------------------------------
+          await setDoc(userRef, {
+            id: userId,
+            email: userEmail,
+            models: DefaultModel,
+            createdAt: Date.now(),
+          });
+
+          setAiSelectedModels(DefaultModel);
+        } else {
+          // ------------------------------
+          // Var olan kullanıcıyı yükle
+          // ------------------------------
+          const data = snap.data();
+          setAiSelectedModels(data.models || DefaultModel);
         }
-    }, [user]);
-
-    const CreateNewUser = async () => {
-
-        const email = user?.primaryEmailAddress?.emailAddress;
-        if (!email) return;
-
-        // Firestore'da users koleksiyonu
-        const userRef = doc(db, "users", email);
-        const userSnap = await getDoc(userRef);
-
-        // Eğer kullanıcı zaten varsa çık
-        if (userSnap.exists()) {
-            console.log("Existing user found");
-            const userInfo=userSnap.data();
-            setAiSelectedModels(userInfo?.selectedModelPref);
-            setUserDetail(userInfo);
-            return;
-        }
-
-        // Yeni kullanıcı verisi
-        const userData = {
-            name: user?.fullName,
-            email: email,
-            createdAt: new Date(),
-            remainingMsg: 5, // free user default
-            plan: "Free",
-            credits: 1000, // Paid users
-        };
-
-        // Firestore'a kaydet
-        await setDoc(userRef, userData);
-        console.log("New user data saved");
-        setUserDetail(userData);
+      } catch (err) {
+        console.error("User load/create error:", err);
+      }
     };
 
-    return (
-        <NextThemesProvider
-            {...props}
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-            disableTransitionOnChange>
+    loadUser();
+  }, [user]);
 
-            <UserDetailContext.Provider value={{userDetail,setUserDetail}}>
-            <AiSelectedModelConetxt.Provider value={{aiSelectedModels, setAiSelectedModels, messages, setMessages}}>
-                <SidebarProvider>
-                    <AppSidebar />
-
-                    
-                    <div className="w-full">
-                        <AppHeader />
-                        {children}
-                    </div>
-                </SidebarProvider>
-            </AiSelectedModelConetxt.Provider>
-            </UserDetailContext.Provider>
-        </NextThemesProvider>
-    );
+  // -----------------------------------------------------------
+  // Context Value
+  // -----------------------------------------------------------
+  return (
+    <AiSelectedModelContext.Provider
+      value={{ aiSelectedModels, setAiSelectedModels, messages, setMessages }}
+    >
+      {children}
+    </AiSelectedModelContext.Provider>
+  );
 }
-
-export default Provider;
