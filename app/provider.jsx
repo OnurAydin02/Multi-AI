@@ -14,14 +14,29 @@ import { UserDetailContext } from "@/context/UserDetailContext";
 function Provider({ children, ...props }) {
 
     const { user } = useUser();
-    const [aiSelectedModels,setAiSelectedModels] = useState(DefaultModel);
-    const [userDetail,setUserDetail] = useState();
+    const [aiSelectedModels, setAiSelectedModels] = useState(DefaultModel);
+    const [userDetail, setUserDetail] = useState();
+    const [messages, setMessages] = useState({})
 
     useEffect(() => {
         if (user) {
             CreateNewUser();   // <-- DOĞRU ŞEKİLDE ÇAĞIRMA
         }
     }, [user]);
+
+    useEffect(() => {
+        if (user && aiSelectedModels) {
+            updateAIModelSelectionPref();
+        }
+    }, [user, aiSelectedModels]);
+
+    const updateAIModelSelectionPref = async () => {
+        if (!user?.primaryEmailAddress?.emailAddress) return;
+        const docRef = doc(db, "users", user?.primaryEmailAddress?.emailAddress)
+        await setDoc(docRef, {
+            selectedModelPref: aiSelectedModels
+        }, { merge: true })
+    }
 
     const CreateNewUser = async () => {
 
@@ -35,8 +50,8 @@ function Provider({ children, ...props }) {
         // Eğer kullanıcı zaten varsa çık
         if (userSnap.exists()) {
             console.log("Existing user found");
-            const userInfo=userSnap.data();
-            setAiSelectedModels(userInfo?.selectedModelPref);
+            const userInfo = userSnap.data();
+            setAiSelectedModels(userInfo?.selectedModelPref ?? DefaultModel);
             setUserDetail(userInfo);
             return;
         }
@@ -65,18 +80,18 @@ function Provider({ children, ...props }) {
             enableSystem
             disableTransitionOnChange>
 
-            <UserDetailContext.Provider value={{userDetail,setUserDetail}}>
-            <AiSelectedModelConetxt.Provider value={{aiSelectedModels,setAiSelectedModels}}>
-                <SidebarProvider>
-                    <AppSidebar />
+            <UserDetailContext.Provider value={{ userDetail, setUserDetail }}>
+                <AiSelectedModelConetxt.Provider value={{ aiSelectedModels, setAiSelectedModels, messages, setMessages }}>
+                    <SidebarProvider>
+                        <AppSidebar />
 
-                    
-                    <div className="w-full">
-                        <AppHeader />
-                        {children}
-                    </div>
-                </SidebarProvider>
-            </AiSelectedModelConetxt.Provider>
+
+                        <div className="w-full">
+                            <AppHeader />
+                            {children}
+                        </div>
+                    </SidebarProvider>
+                </AiSelectedModelConetxt.Provider>
             </UserDetailContext.Provider>
         </NextThemesProvider>
     );
