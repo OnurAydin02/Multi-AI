@@ -4,14 +4,42 @@ import { Paperclip, Mic, Send } from "lucide-react";
 import AiMultiModels from './AiMultiModels';
 import { AiSelectedModelConetxt } from '@/context/AiSelectedModelContext';
 import axios from 'axios';
+import { v4 as uuidv4 } from 'uuid';
+import { useSearchParams } from 'next/navigation';
+import { db } from '@/config/FirebaseConfig';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { useUser } from '@clerk/nextjs';
 
 function ChatInputBox() {
 
     const [userInput, setUserInput] = useState("");
     const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelConetxt);
+    const { user } = useUser();
+    const [chatId, setChatId] = useState();
+    const params = useSearchParams();
+
+    useEffect(() => {
+        const paramChatId = params.get('chatId');
+        if (paramChatId) {
+            setChatId(paramChatId);
+            GetMessages(paramChatId);
+        }
+        else {
+            setChatId(uuidv4());
+            setMessages({}); // Clear messages for a truly new chat
+
+            // Optional: Reset enabled models to default or keep user preference?
+            // Usually for a clean slate, we just clear messages. 
+            // The models stay selecting based on global context (which is fine).
+        }
+    }, [params])
 
     const handleSend = async () => {
         if (!userInput.trim()) return;
+
+        // Note: We deliberately do NOT update the URL here. 
+        // User wants refresh to clear the screen (by keeping URL clean), 
+        // but sidebar will show history to navigate back.
 
         // 1 🧩 Add user message to all enabled models
         setMessages((prev) => {
@@ -88,6 +116,41 @@ function ChatInputBox() {
             }
         });
     };
+
+    useEffect(() => {
+        // Only save when messages change. 
+        // We checking chatId exists to ensure valid save, but don't trigger ON chatId change.
+        if (user && messages && chatId && Object.keys(messages).length > 0) {
+            SaveMessages();
+        }
+    }, [messages, user])
+
+    const SaveMessages = async () => {
+        const docRef = doc(db, 'chatHistory', chatId)
+
+        await setDoc(docRef, {
+            chatId: chatId,
+            userEmail: user?.primaryEmailAddress?.emailAddress,
+            messages: messages,
+            lastUpdated: Date.now()
+        })
+    }
+
+    const GetMessages = async (id) => {
+        const currentId = id || chatId;
+        if (!currentId) return;
+
+        const docRef = doc(db, 'chatHistory', currentId);
+        const docSnap = await getDoc(docRef);
+
+        if (docSnap.exists()) {
+            console.log("Loaded messages:", docSnap.data());
+            const docData = docSnap.data();
+            setMessages(docData.messages)
+        } else {
+            setMessages({})
+        }
+    }
 
     return (
         <div className='relative min-h-screen pb-32'>

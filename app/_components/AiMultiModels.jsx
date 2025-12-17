@@ -19,6 +19,7 @@ import { db } from '@/config/FirebaseConfig';
 import { useUser } from '@clerk/nextjs';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
+import { useSearchParams } from 'next/navigation';
 
 function AiMultiModels() {
     const { user } = useUser();
