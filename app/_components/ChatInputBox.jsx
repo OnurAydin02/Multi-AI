@@ -9,6 +9,7 @@ import { useSearchParams } from 'next/navigation';
 import { db } from '@/config/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { useUser } from '@clerk/nextjs';
+import { toast } from 'sonner';
 
 function ChatInputBox() {
 
@@ -40,6 +41,19 @@ function ChatInputBox() {
         // Note: We deliberately do NOT update the URL here. 
         // User wants refresh to clear the screen (by keeping URL clean), 
         // but sidebar will show history to navigate back.
+
+        // Deduct and Check Token Limit
+        const result = await axios.post('/api/user-remaining-msg', {
+            token: 1
+        });
+        const remainingToken = result?.data?.remainingToken
+
+        if (remainingToken <= 0) {
+            console.log("Limit Exceed")
+            toast.error("Maximum Daily Limit Exceed");
+            return;
+        }
+
 
         // 1 🧩 Add user message to all enabled models
         setMessages((prev) => {

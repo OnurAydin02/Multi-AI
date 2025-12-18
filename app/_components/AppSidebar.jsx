@@ -14,15 +14,29 @@ import { useUser, useClerk } from "@clerk/nextjs";
 import UsageCreditProgress from "./UsageCreditProgress";
 import { collection, getDocs, query, where, onSnapshot } from "firebase/firestore";
 import { db } from "@/config/FirebaseConfig";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useContext } from "react";
+import { AiSelectedModelConetxt } from "@/context/AiSelectedModelContext";
 import moment from "moment";
 import Link from 'next/link';
+import axios from "axios";
 
 export function AppSidebar() {
   const { theme, setTheme } = useTheme();
   const { user } = useUser();
   const { openSignIn } = useClerk();
   const [chatHistory, setChatHistory] = useState([]);
+  const [mounted, setMounted] = useState(false);
+  const [freeMsgCount, setFreeMsgCount] = useState(0);
+  const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelConetxt);
+
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  useEffect(() => {
+    GetRemainingTokenMsgs();
+  }, [messages])
 
   useEffect(() => {
     if (!user) return;
@@ -58,6 +72,12 @@ export function AppSidebar() {
     }
   }
 
+  const GetRemainingTokenMsgs = async () => {
+    const result = await axios.post('/api/user-remaining-msg', {});
+    console.log(result);
+    setFreeMsgCount(result?.data?.remainingToken)
+  }
+
   return (
     <Sidebar>
       <SidebarHeader>
@@ -74,7 +94,7 @@ export function AppSidebar() {
               <h2 className="font-bold text-xl">Multi AI</h2>
             </div>
             <div>
-              {theme === 'light' ? (
+              {mounted && (theme === 'light' ? (
                 <Button variant="ghost" onClick={() => setTheme("dark")}>
                   <Moon />
                 </Button>
@@ -82,7 +102,7 @@ export function AppSidebar() {
                 <Button variant="ghost" onClick={() => setTheme("light")}>
                   <Sun />
                 </Button>
-              )}
+              ))}
             </div>
           </div>
           {user ?
@@ -119,7 +139,7 @@ export function AppSidebar() {
           {!user ? <Button className={'w-full'} size={'lg'} onClick={() => openSignIn({ mode: 'modal' })}>Sign In/Sign Up</Button>
             :
             <div>
-              <UsageCreditProgress />
+              <UsageCreditProgress remainingToken={freeMsgCount} />
               <Button className={'w-full mb-3'}> <Zap /> Upgrade plan </Button>
               <Button className="flex" variant={'ghost'}>
                 <User2 />  <h2>Settings</h2>
