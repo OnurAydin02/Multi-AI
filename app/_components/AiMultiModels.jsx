@@ -20,11 +20,15 @@ import { useUser } from '@clerk/nextjs';
 import Markdown from 'react-markdown'
 import remarkGfm from 'remark-gfm'
 import { useSearchParams } from 'next/navigation';
+import { useAuth } from '@clerk/nextjs';
 
 function AiMultiModels() {
     const { user } = useUser();
     const [aiModelList, setAiModelList] = useState(AiModelList)
     const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelConetxt);
+    const { has, isLoaded } = useAuth();
+    const paidUser = isLoaded && has ? has({ plan: 'unlimited_plan' }) : false;
+
 
     useEffect(() => {
         if (aiSelectedModels) {
@@ -35,18 +39,31 @@ function AiMultiModels() {
         }
     }, [aiSelectedModels])
 
-    const onToggleChange = (model, value) => {
+    const onToggleChange = (modelName, value) => {
         setAiModelList((prev) =>
             prev.map((m) =>
-                m.model === model ? { ...m, enable: value } : m))
+                m.model === modelName ? { ...m, enable: value } : m))
 
-        setAiSelectedModels((prev) => ({
-            ...prev,
-            [model]: {
-                ...(prev?.[model] ?? {}),
+        setAiSelectedModels((prev) => {
+            const currentModelData = prev?.[modelName] || {};
+            const updatedModelData = {
+                ...currentModelData,
                 enable: value
+            };
+
+            // If enabling and no modelId exists, find default from AiModelList
+            if (value && !updatedModelData.modelId) {
+                const modelConfig = AiModelList.find(m => m.model === modelName);
+                if (modelConfig && modelConfig.subModel && modelConfig.subModel.length > 0) {
+                    updatedModelData.modelId = modelConfig.subModel[0].id;
+                }
             }
-        }))
+
+            return {
+                ...prev,
+                [modelName]: updatedModelData
+            };
+        });
     }
 
 
@@ -56,6 +73,7 @@ function AiMultiModels() {
         setAiSelectedModels(prev => ({
             ...prev,
             [parentModel]: {
+                ...(prev?.[parentModel] ?? {}),
                 modelId: value
             }
         }))
@@ -74,46 +92,52 @@ function AiMultiModels() {
                             />
 
                             {model.enable && <Select
-                                defaultValue={model.premium ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].id)}
+                                defaultValue={(!paidUser && model.premium) ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].id)}
                                 onValueChange={(value) => onSelecteValue(model.model, value)}
-                                disabled={model.premium}
+                                disabled={model.premium && !paidUser}
                             >
                                 <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder={model.premium ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].name)} />
+                                    <SelectValue placeholder={(!paidUser && model.premium) ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].name)} />
                                 </SelectTrigger>
-                                <SelectContent>
-                                    <SelectGroup className='px-3'>
-                                        <SelectLabel className='text-sm text-gray-400'>Free</SelectLabel>
-                                        {model.subModel.map((subModel, index) => subModel.premium == false && (
-                                            <SelectItem key={index} value={subModel.id}>
-                                                {subModel.name}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
+                                <SelectContent className="bg-white">
+                                    {model.subModel.some(sm => sm.premium == false) && (
+                                        <SelectGroup className='px-3'>
+                                            <SelectLabel className='text-sm text-gray-400'>Free</SelectLabel>
+                                            {model.subModel.map((subModel, index) => subModel.premium == false && (
+                                                <SelectItem key={index} value={subModel.id}>
+                                                    {subModel.name}
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    )}
 
-                                    <SelectGroup className='px-3'>
-                                        <SelectLabel className='text-sm text-gray-400'>Premium</SelectLabel>
-                                        {model.subModel.map((subModel, index) => subModel.premium == true && (
-                                            <SelectItem key={index} value={subModel.name} disabled={subModel.premium} >
-                                                {subModel.name} {subModel.premium && <Lock className='h-4 w-4' />}
-                                            </SelectItem>
-                                        ))}
-                                    </SelectGroup>
+                                    {model.subModel.some(sm => sm.premium == true) && (
+                                        <SelectGroup className='px-3'>
+                                            <SelectLabel className='text-sm text-gray-400'>Premium</SelectLabel>
+                                            {model.subModel.map((subModel, index) => subModel.premium == true && (
+                                                <SelectItem key={index} value={subModel.id} disabled={!paidUser} >
+                                                    <div className="flex items-center gap-2">
+                                                        {subModel.name} {(!paidUser) && <Lock className='h-4 w-4 text-gray-400' />}
+                                                    </div>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectGroup>
+                                    )}
                                 </SelectContent>
                             </Select>}
                         </div>
                         <div>
-                            {model.enable ? <Switch checked={model.enable}
+                            {model.enable ? <Switch checked={model.enable} disabled={!paidUser && model.premium}
                                 onCheckedChange={(v) => onToggleChange(model.model, v)}
                             /> : <MessageSquare onClick={() => onToggleChange(model.model, true)} />}
                         </div>
                     </div>
 
-                    {model.premium && model.enable && <div className='flex items-center justify-center h-full'>
-                        <Button> <Lock /> Upgreade to unlock</Button>
+                    {isLoaded && !paidUser && model.premium && model.enable && <div className='flex items-center justify-center h-full'>
+                        <Button> <Lock /> Upgrade to unlock</Button>
                     </div>}
 
-                    {model.enable && <div className='flex-1 p-4'>
+                    {model.enable && (!model.premium || paidUser || !isLoaded) && <div className='flex-1 p-4'>
                         <div className='flex-1 p-4 space-y-2'>
                             {messages[model.model]?.map((m, i) => (
                                 <div

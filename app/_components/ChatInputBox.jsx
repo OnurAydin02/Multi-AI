@@ -2,13 +2,14 @@ import React, { useContext, useEffect, useState } from 'react'
 import { Button } from "@/components/ui/button";
 import { Paperclip, Mic, Send } from "lucide-react";
 import AiMultiModels from './AiMultiModels';
+import AiModelList from "@/shared/AiModelList";
 import { AiSelectedModelConetxt } from '@/context/AiSelectedModelContext';
 import axios from 'axios';
 import { v4 as uuidv4 } from 'uuid';
 import { useSearchParams } from 'next/navigation';
 import { db } from '@/config/FirebaseConfig';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
-import { useUser } from '@clerk/nextjs';
+import { useAuth, useUser } from '@clerk/nextjs';
 import { toast } from 'sonner';
 
 function ChatInputBox() {
@@ -18,6 +19,8 @@ function ChatInputBox() {
     const { user } = useUser();
     const [chatId, setChatId] = useState();
     const params = useSearchParams();
+    const { has, isLoaded } = useAuth();
+    const paidUser = isLoaded && has ? has({ plan: 'unlimited_plan' }) : false;
 
     useEffect(() => {
         const paramChatId = params.get('chatId');
@@ -38,22 +41,34 @@ function ChatInputBox() {
     const handleSend = async () => {
         if (!userInput.trim()) return;
 
-        // Note: We deliberately do NOT update the URL here. 
-        // User wants refresh to clear the screen (by keeping URL clean), 
-        // but sidebar will show history to navigate back.
-
-        // Deduct and Check Token Limit
-        const result = await axios.post('/api/user-remaining-msg', {
-            token: 1
-        });
-        const remainingToken = result?.data?.remainingToken
-
-        if (remainingToken <= 0) {
-            console.log("Limit Exceed")
-            toast.error("Maximum Daily Limit Exceed");
+        // Ensure we wait for auth state
+        if (!isLoaded) {
+            toast.info("Checking your subscription...");
             return;
         }
 
+        // Call only if User Free
+        if (!paidUser) {
+            // Deduct and Check Token Limit
+            try {
+                const result = await axios.post('/api/user-remaining-msg', {
+                    token: 1
+                });
+                const remainingToken = result?.data?.remainingToken
+
+                if (remainingToken <= 0) {
+                    console.log("Limit Exceed")
+                    toast.error("Maximum Daily Limit Exceed");
+                    return;
+                }
+            } catch (err) {
+                console.error("Token check failed", err);
+                // If token API fails, we might want to block or allow. 
+                // Let's block for safety.
+                toast.error("Error checking message limit.");
+                return;
+            }
+        }
 
         // 1 🧩 Add user message to all enabled models
         setMessages((prev) => {
@@ -86,9 +101,17 @@ function ChatInputBox() {
             }));
 
             try {
+                // Find model config to get systemPrompt
+                const modelConfig = AiModelList.find(m => m.model === parentModel);
+
+                // Combine system prompt with user input to ensure compatibility with all APIs
+                const combinedContent = modelConfig?.systemPrompt
+                    ? `${modelConfig.systemPrompt}\n\nKullanıcı: ${currentInput}`
+                    : currentInput;
+
                 const result = await axios.post("/api/ai-multi-model", {
                     model: modelInfo.modelId,
-                    msg: [{ role: "user", content: currentInput }],
+                    msg: [{ role: "user", content: combinedContent }],
                     parentModel,
                 });
 
