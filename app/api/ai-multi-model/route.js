@@ -1,6 +1,8 @@
 import axios from "axios";
 import { NextResponse } from "next/server";
 
+export const maxDuration = 60; // Set timeout to 60 seconds
+
 export async function POST(req) {
   try {
     const { model, msg, parentModel } = await req.json();

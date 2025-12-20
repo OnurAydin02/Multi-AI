@@ -19,6 +19,8 @@ import { AiSelectedModelConetxt } from "@/context/AiSelectedModelContext";
 import moment from "moment";
 import Link from 'next/link';
 import axios from "axios";
+import PricingModal from "./PricingModal";
+import { useAuth } from '@clerk/nextjs';
 
 export function AppSidebar() {
   const { theme, setTheme } = useTheme();
@@ -28,7 +30,8 @@ export function AppSidebar() {
   const [mounted, setMounted] = useState(false);
   const [freeMsgCount, setFreeMsgCount] = useState(0);
   const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelConetxt);
-
+  const { has, isLoaded } = useAuth();
+  const paidUser = isLoaded && has ? has({ plan: 'unlimited_plan' }) : false;
 
   useEffect(() => {
     setMounted(true);
@@ -105,10 +108,12 @@ export function AppSidebar() {
               ))}
             </div>
           </div>
-          {user ?
-            <Link href={'/'}><Button className='mt-5 w-full' size='lg'>+ New Chat</Button></Link> :
+          {mounted && (user ?
+            <Button asChild className='mt-5 w-full' size='lg'>
+              <Link href={'/'}>+ New Chat</Link>
+            </Button> :
             <Button className='mt-5 w-full' size='lg' onClick={() => openSignIn({ forceRedirectUrl: '/' })}>+ New Chat</Button>
-          }
+          )}
         </div>
       </SidebarHeader>
 
@@ -139,8 +144,14 @@ export function AppSidebar() {
           {!user ? <Button className={'w-full'} size={'lg'} onClick={() => openSignIn({ mode: 'modal' })}>Sign In/Sign Up</Button>
             :
             <div>
-              <UsageCreditProgress remainingToken={freeMsgCount} />
-              <Button className={'w-full mb-3'}> <Zap /> Upgrade plan </Button>
+              {!paidUser && (
+                <div>
+                  <UsageCreditProgress remainingToken={freeMsgCount} />
+                  <PricingModal>
+                    <Button className={'w-full mb-3'}> <Zap /> Upgrade plan </Button>
+                  </PricingModal>
+                </div>
+              )}
               <Button className="flex" variant={'ghost'}>
                 <User2 />  <h2>Settings</h2>
               </Button>

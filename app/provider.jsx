@@ -51,7 +51,10 @@ function Provider({ children, ...props }) {
         if (userSnap.exists()) {
             console.log("Existing user found");
             const userInfo = userSnap.data();
-            setAiSelectedModels(userInfo?.selectedModelPref ?? DefaultModel);
+            setAiSelectedModels({
+                ...DefaultModel,
+                ...(userInfo?.selectedModelPref ?? {})
+            });
             setUserDetail(userInfo);
             return;
         }
