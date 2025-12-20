@@ -152,8 +152,10 @@ export function AppSidebar() {
                   </PricingModal>
                 </div>
               )}
-              <Button className="flex" variant={'ghost'}>
-                <User2 />  <h2>Settings</h2>
+              <Button className="flex w-full justify-center gap-3" variant={'ghost'} asChild>
+                <Link href="/profile">
+                  <User2 />  <h2>Settings</h2>
+                </Link>
               </Button>
             </div>
           }
