@@ -1,4 +1,4 @@
-import React, { useContext, useEffect, useState } from 'react'
+import React, { useContext, useEffect, useState, useRef } from 'react'
 import { Button } from "@/components/ui/button";
 import { Paperclip, Mic, Send } from "lucide-react";
 import AiMultiModels from './AiMultiModels';
@@ -18,9 +18,16 @@ function ChatInputBox() {
     const { aiSelectedModels, setAiSelectedModels, messages, setMessages } = useContext(AiSelectedModelConetxt);
     const { user } = useUser();
     const [chatId, setChatId] = useState();
+    const [mounted, setMounted] = useState(false);
     const params = useSearchParams();
     const { has, isLoaded } = useAuth();
     const paidUser = isLoaded && has ? has({ plan: 'unlimited_plan' }) : false;
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
+
+    const isMessagesLoading = useRef(false);
 
     useEffect(() => {
         const paramChatId = params.get('chatId');
@@ -158,6 +165,10 @@ function ChatInputBox() {
         // Only save when messages change. 
         // We checking chatId exists to ensure valid save, but don't trigger ON chatId change.
         if (user && messages && chatId && Object.keys(messages).length > 0) {
+            if (isMessagesLoading.current) {
+                isMessagesLoading.current = false;
+                return;
+            }
             SaveMessages();
         }
     }, [messages, user])
@@ -183,6 +194,7 @@ function ChatInputBox() {
         if (docSnap.exists()) {
             console.log("Loaded messages:", docSnap.data());
             const docData = docSnap.data();
+            isMessagesLoading.current = true;
             setMessages(docData.messages)
         } else {
             setMessages({})
@@ -196,8 +208,8 @@ function ChatInputBox() {
                 <AiMultiModels />
             </div>
             {/* Fixed Chat Input */}
-            <div className='fixed bottom-0 left-0 w-full flex justify-center px-4 pb-4'>
-                <div className='w-full border rounded-xl shadow-md max-w-2xl p-4'>
+            <div className='fixed bottom-0 left-0 w-full flex flex-col items-center justify-center px-4 pb-4 bg-gradient-to-t from-background via-background/80 to-transparent pointer-events-none'>
+                <div className='w-full border rounded-xl shadow-md max-w-2xl p-4 bg-background pointer-events-auto'>
                     <input type="text"
                         placeholder='Ask me anything...'
                         className='border-0 outline-none w-full'
@@ -216,8 +228,13 @@ function ChatInputBox() {
                         </div>
                     </div>
                 </div>
-            </div>
-        </div>
+                <div className='mt-2 flex items-center gap-2 opacity-50 hover:opacity-100 transition-opacity duration-300'>
+                    <p className='text-[10px] text-foreground text-center font-medium'>
+                        Multi AI can make mistakes. Handcrafted by <a href="https://www.linkedin.com/in/mustafaonuraydin2/" target="_blank" className='text-blue-500 hover:underline'>Mustafa Onur Aydın</a>
+                    </p>
+                </div >
+            </div >
+        </div >
     )
 }
 
