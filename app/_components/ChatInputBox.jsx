@@ -118,7 +118,7 @@ function ChatInputBox() {
 
                 const result = await axios.post("/api/ai-multi-model", {
                     model: modelInfo.modelId,
-                    msg: [{ role: "user", content: combinedContent }],
+                    msg: combinedContent,
                     parentModel,
                 });
 
