@@ -79,11 +79,11 @@ function AiMultiModels() {
     }
 
     return (
-        <div className='flex flex-1 h-[75vh] border-b'>
+        <div className='flex flex-row flex-1 h-[75vh] border-b overflow-x-auto snap-x snap-mandatory scroll-smooth'>
             {aiModelList.map((model, index) => (
                 <div key={index} className={`flex flex-col border-r h-full
-         overflow-auto
-         ${model.enable ? 'flex-1 min-w-[400px]' : 'w-[100px] flex-none'}`}>
+         overflow-y-auto snap-center
+         ${model.enable ? 'min-w-full md:min-w-[400px] flex-1' : 'min-w-[60px] md:min-w-[100px] flex-none'}`}>
                     <div className='flex w-full h-[70px] items-center justify-between border-b p-4'>
                         <div className='flex items-center gap-4'>
                             <Image src={model.icon} alt={model.model}
@@ -95,10 +95,10 @@ function AiMultiModels() {
                                 onValueChange={(value) => onSelecteValue(model.model, value)}
                                 disabled={model.premium && !paidUser}
                             >
-                                <SelectTrigger className="w-[180px]">
-                                    <SelectValue placeholder={(!paidUser && model.premium) ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].name)} />
+                                <SelectTrigger className="w-[130px] md:w-[180px]">
+                                    <SelectValue className='truncate' placeholder={(!paidUser && model.premium) ? "" : (aiSelectedModels[model.model]?.modelId || model.subModel[0].name)} />
                                 </SelectTrigger>
-                                <SelectContent className="bg-white">
+                                <SelectContent>
                                     {model.subModel.some(sm => sm.premium == false) && (
                                         <SelectGroup className='px-3'>
                                             <SelectLabel className='text-sm text-gray-400'>Free</SelectLabel>
