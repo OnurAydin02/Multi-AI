@@ -1,16 +1,21 @@
-# Multi_AI 🤖
+# Multi AI 🤖
 
-Multi_AI is a modern web application that allows users to run the same prompt across multiple AI models simultaneously and compare their responses side-by-side in real time.
+**Multi AI** is a modern web application that allows users to run the same prompt across multiple AI models simultaneously and compare their responses side-by-side in real time.
 
-The platform provides a unified workspace to evaluate different Large Language Models (LLMs) from a single, clean interface.
+It provides a unified workspace for evaluating different Large Language Models (LLMs) through a clean and intuitive interface.
 
 ---
 
-## 🚀 Features
-- Run the same prompt across multiple AI models
+## 🚀 Live Demo
+👉 https://multi-ai.mustafaonuraydin.dev
+
+---
+
+## ✨ Features
+- Run a single prompt across multiple AI models
 - Compare AI responses side-by-side in real time
-- Unified and intuitive user interface
-- Secure authentication and user-based access
+- Clean, modern, and intuitive user interface
+- Secure authentication with user-based access
 - Modular and scalable frontend architecture
 
 ---
@@ -25,16 +30,20 @@ The platform provides a unified workspace to evaluate different Large Language M
 
 ---
 
-## 🎯 Purpose of the Project
-Different AI models often generate different responses to the same prompt.  
-Multi_AI was built to make it easier to compare these outputs and help users determine which model best suits their needs.
+## 🎯 Project Motivation
+Different AI models often produce varying responses to the same prompt.  
+**Multi AI** was built to make it easier to compare these outputs and help users identify which model best fits their specific use case.
 
-This project also serves as a practical exploration of multi-provider AI integration, modern frontend development, and scalable application design.
+This project also serves as a hands-on exploration of:
+- Multi-provider AI integration
+- Modern frontend architecture
+- Scalable and maintainable application design
 
 ---
 
-## 📦 Installation
-To run the project locally, follow these steps:
+## 📦 Installation & Local Setup
+
+To run the project locally:
 
 ```bash
 git clone https://github.com/OnurAydin02/Multi_AI.git
