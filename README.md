@@ -7,7 +7,7 @@ It provides a unified workspace for evaluating different Large Language Models (
 ---
 
 ## 🚀 Live Demo
-👉 https://multi-ai.mustafaonuraydin.dev
+👉 https://multiai.mustafaonuraydin.dev
 
 ---
 
