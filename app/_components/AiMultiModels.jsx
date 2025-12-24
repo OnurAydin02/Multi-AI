@@ -79,7 +79,7 @@ function AiMultiModels() {
     }
 
     return (
-        <div className='flex flex-row flex-1 h-[75vh] border-b overflow-x-auto snap-x snap-mandatory scroll-smooth'>
+        <div className='flex flex-row flex-1 h-[75vh] border-b overflow-x-auto snap-x snap-mandatory scroll-smooth no-scrollbar'>
             {aiModelList.map((model, index) => (
                 <div key={index} className={`flex flex-col border-r h-full
          overflow-y-auto snap-center
