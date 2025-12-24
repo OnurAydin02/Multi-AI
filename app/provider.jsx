@@ -89,7 +89,7 @@ function Provider({ children, ...props }) {
                         <AppSidebar />
 
 
-                        <div className="w-full">
+                        <div className="flex-1 min-w-0">
                             <AppHeader />
                             {children}
                         </div>
