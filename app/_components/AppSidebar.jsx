@@ -48,12 +48,18 @@ export function AppSidebar() {
     // Using onSnapshot to get real-time updates from Firebase
     const q = query(collection(db, "chatHistory"), where("userEmail", '==', userEmail));
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-      const chats = snapshot.docs.map(doc => doc.data());
-      // Sort chats by date (newest first)
-      const sortedChats = chats.sort((a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0));
-      setChatHistory(sortedChats);
-    });
+    const unsubscribe = onSnapshot(
+      q,
+      (snapshot) => {
+        const chats = snapshot.docs.map(doc => doc.data());
+        const sortedChats = chats.sort((a, b) => (b.lastUpdated || 0) - (a.lastUpdated || 0));
+        setChatHistory(sortedChats);
+      },
+      (error) => {
+        console.error("Firestore error:", error.message);
+        // Silently fail - user can still use the app without chat history
+      }
+    );
 
     return () => unsubscribe();
   }, [user]);
