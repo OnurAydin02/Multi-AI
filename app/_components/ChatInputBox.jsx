@@ -201,6 +201,10 @@ function ChatInputBox() {
         }
     }
 
+    if (!mounted) {
+        return null;
+    }
+
     return (
         <div className='relative min-h-screen pb-32'>
             {/* Page Content */}
